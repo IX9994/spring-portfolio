@@ -1,0 +1,79 @@
+-- ============================================================================
+-- タスク管理アプリ / Oracle Database 初期構築SQL
+-- 対象: spring_portfolio
+-- Java エンティティ: jp.ac.sanko.entity.User / Task
+-- 接続先: XEPDB1 / スキーマ: TASK_APP
+-- ============================================================================
+-- 【重要】
+-- 1. このファイルの CREATE 文は、空の TASK_APP スキーマを初期構築するためのものです。
+--    既に USERS/TASK/USER_SEQ/TASK_SEQ がある環境では再実行しないでください。
+-- 2. 既存の PORTFOLIO ユーザーやそのデータは変更しません。
+-- 3. パスワードは記載しません。TASK_APP は管理者から別途作成してください。
+-- 4. ユーザー情報は BCrypt で保存するため、SQLで平文パスワードを登録しません。
+--    Spring Boot の新規登録画面からユーザーを作成してください。
+--
+-- 【管理者(SYSTEM)での事前準備：TASK_APP 未作成の場合のみ】
+-- SQL Developer で SYSTEM / XEPDB1 に接続し、以下を参考に実行します。
+-- パスワードは安全な場所で設定し、公開用SQLには記録しないでください。
+--
+--   CREATE USER task_app IDENTIFIED BY "<自分で設定したパスワード>"
+--       DEFAULT TABLESPACE USERS
+--       TEMPORARY TABLESPACE TEMP
+--       QUOTA 50M ON USERS;
+--   GRANT CREATE SESSION, CREATE TABLE, CREATE SEQUENCE TO task_app;
+--
+-- ※ 上の CREATE USER は説明用コメントです。TASK_APP が既にあれば実行不要です。
+-- ※ SYSTEM で XEPDB1 に直接接続している場合、ALTER SESSION は不要です。
+--
+-- ここから下は TASK_APP / XEPDB1 に接続して実行してください。
+-- ============================================================================
+
+-- ユーザーID採番用（User.java: @SequenceGenerator(sequenceName = "USER_SEQ", allocationSize = 1)）
+CREATE SEQUENCE USER_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- タスクID採番用（Task.java: @SequenceGenerator(sequenceName = "TASK_SEQ", allocationSize = 1)）
+CREATE SEQUENCE TASK_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE
+    NOCYCLE;
+
+-- ユーザー情報（User.java の @Table(name = "USERS") と各 @Column に対応）
+CREATE TABLE USERS (
+    ID       NUMBER(10, 0)   NOT NULL,
+    EMAIL    VARCHAR2(100 CHAR) NOT NULL,
+    PASSWORD VARCHAR2(100 CHAR) NOT NULL,
+    CONSTRAINT PK_USERS PRIMARY KEY (ID),
+    CONSTRAINT UQ_USERS_EMAIL UNIQUE (EMAIL)
+);
+
+-- タスク情報（Task.java の @Table(name = "TASK") と各 @Column に対応）
+CREATE TABLE TASK (
+    ID           NUMBER(10, 0)    NOT NULL,
+    TITLE        VARCHAR2(100 CHAR) NOT NULL,
+    DESCRIPTION  VARCHAR2(500 CHAR),
+    COMPLETED    NUMBER(10, 0) DEFAULT 0 NOT NULL,
+    CREATED_DATE DATE           NOT NULL,
+    DUE_DATE     DATE,
+    USER_ID      NUMBER(10, 0)  NOT NULL,
+    CONSTRAINT PK_TASK PRIMARY KEY (ID),
+    CONSTRAINT CK_TASK_COMPLETED CHECK (COMPLETED IN (0, 1)),
+    CONSTRAINT FK_TASK_USER FOREIGN KEY (USER_ID) REFERENCES USERS (ID)
+);
+
+-- ユーザーごとのタスク一覧・検索を効率化する補助索引
+CREATE INDEX IX_TASK_USER_ID ON TASK (USER_ID);
+
+-- ============================================================================
+-- 作成結果の確認（参照のみ）
+-- ============================================================================
+SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME IN ('USERS', 'TASK') ORDER BY TABLE_NAME;
+SELECT SEQUENCE_NAME FROM USER_SEQUENCES WHERE SEQUENCE_NAME IN ('USER_SEQ', 'TASK_SEQ') ORDER BY SEQUENCE_NAME;
+
+-- 登録データの確認は以下を必要に応じて実行してください。
+-- SELECT ID, EMAIL FROM USERS ORDER BY ID;
+-- SELECT ID, TITLE, COMPLETED, CREATED_DATE, DUE_DATE, USER_ID FROM TASK ORDER BY ID;

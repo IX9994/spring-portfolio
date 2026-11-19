@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('トップページ')}"></head>
+
+<body>
+	<div class="auth">
+		<div class="hero">
+			<div class="eyebrow">// TASK MANAGEMENT SYSTEM</div>
+			<h1>タスク管理サイト</h1>
+			<p>キーワード検索や完了状態での絞り込みができるシンプルなタスク管理アプリです。</p>
+			<a th:href="@{/login}" class="btn btn-primary btn-lg">ログイン</a>
+			<a th:href="@{/register}" class="btn btn-secondary btn-lg">新規登録</a>
+		</div>
+	</div>
+
+	<script th:src="@{/js/jquery-4.0.0.slim.min.js}"></script>
+	<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+
+</html>

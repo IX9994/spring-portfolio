@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('新規登録')}"></head>
+
+<body>
+	<div class="auth">
+		<div class="auth-box">
+			<a class="auth-brand" th:href="@{/top}">TASKS//SYS</a>
+
+			<div class="cy-card">
+				<div class="eyebrow">// SIGN UP</div>
+				<h1 style="margin-bottom: 20px;">新規登録</h1>
+
+				<div class="alert alert-danger" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+				<form th:action="@{/register}" method="post">
+					<input type="hidden" name="_csrf" th:value="${csrfToken}">
+					<div class="form-group">
+						<label for="InputEmail">メールアドレス</label>
+						<input type="email" class="form-control" id="InputEmail" name="mailAdress"
+							th:value="${mailAdress}" maxlength="100" placeholder="email address">
+					</div>
+					<div class="form-group">
+						<label for="InputPassword">パスワード（8文字以上）</label>
+						<input type="password" class="form-control" id="InputPassword" name="password"
+							placeholder="Password">
+					</div>
+					<div class="form-group">
+						<label for="InputConfirm">パスワード（確認用）</label>
+						<input type="password" class="form-control" id="InputConfirm" name="confirmPassword"
+							placeholder="Password">
+					</div>
+					<button type="submit" class="btn btn-primary btn-block">登録する</button>
+				</form>
+
+				<p class="mt-3 mb-0 text-center">
+					<a th:href="@{/login}">ログイン画面に戻る</a>
+				</p>
+			</div>
+		</div>
+	</div>
+
+	<script th:src="@{/js/jquery-4.0.0.slim.min.js}"></script>
+	<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+
+</html>

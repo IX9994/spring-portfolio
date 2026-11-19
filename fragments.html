@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- 共通の head（フォント・CSS） -->
+
+<head th:fragment="head(pageTitle)">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title th:text="${pageTitle}">タスク管理</title>
+	<link rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Orbitron:wght@500;700&display=swap">
+	<link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+	<link rel="stylesheet" th:href="@{/css/custom.css}">
+</head>
+
+<body>
+	<!-- 共通のサイドバー（active：現在のメニュー） -->
+	<nav class="side" th:fragment="sidebar(active)">
+		<a class="brand" th:href="@{/index}">TASKS//SYS</a>
+		<a th:href="@{/index}" th:classappend="${active == 'list'} ? 'cur'">タスク一覧</a>
+		<a th:href="@{/task/add}" th:classappend="${active == 'add'} ? 'cur'">タスクを追加</a>
+		<a th:href="@{/logout}" th:classappend="${active == 'logout'} ? 'cur'">ログアウト</a>
+		<span class="who" th:text="'USER: ' + ${session['メールアドレス']}"></span>
+	</nav>
+</body>
+
+</html>

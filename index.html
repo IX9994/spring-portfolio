@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments :: head('タスク管理')}"></head>
+
+<body>
+	<div class="app">
+		<nav th:replace="~{fragments :: sidebar('list')}"></nav>
+
+		<main class="main">
+			<div class="page-head">
+				<div>
+					<div class="eyebrow">// TASK LIST</div>
+					<h1>タスク一覧</h1>
+				</div>
+				<a th:href="@{/task/add}" class="btn btn-primary">＋ タスクを追加</a>
+			</div>
+
+			<!-- 集計 -->
+			<div class="stats">
+				<div class="cy-card ring-card">
+					<svg class="ring" width="96" height="96" viewBox="0 0 100 100" aria-hidden="true">
+						<circle cx="50" cy="50" r="40" fill="none" stroke="#12394A" stroke-width="8" />
+						<circle cx="50" cy="50" r="40" fill="none" stroke="#00E5FF" stroke-width="8"
+							th:attr="stroke-dasharray=|${totalCount > 0 ? doneCount * 251.3 / totalCount : 0} 251.3|"
+							stroke-dasharray="0 251.3" transform="rotate(-90 50 50)" />
+					</svg>
+					<div>
+						<div class="lb">COMPLETION</div>
+						<div class="n" th:text="|${totalCount > 0 ? doneCount * 100 / totalCount : 0}%|">0%</div>
+						<div class="sub">完了率 ／ <span th:text="${doneCount}"></span> / <span
+								th:text="${totalCount}"></span> 件 完了</div>
+					</div>
+				</div>
+				<div class="cy-card">
+					<div class="lb">DUE TODAY</div>
+					<div class="n" th:text="${dueTodayCount}">0</div>
+					<div class="sub">今日の期限</div>
+				</div>
+				<div class="cy-card">
+					<div class="lb">OVERDUE</div>
+					<div class="n pk" th:text="${overdueCount}">0</div>
+					<div class="sub">期限切れ</div>
+				</div>
+			</div>
+
+			<div class="cy-card">
+				<!-- 検索フォーム -->
+				<form th:action="@{/index}" method="get" class="filter">
+					<label class="sr-only" for="keyword">タスク名で検索</label>
+					<input type="text" class="form-control" id="keyword" name="keyword" th:value="${keyword}"
+						placeholder="タスク名で検索">
+					<label class="sr-only" for="completed">状態で絞り込み</label>
+					<select class="form-control" id="completed" name="completed">
+						<option value="" th:selected="${completed == null}">すべての状態</option>
+						<option value="0" th:selected="${completed != null and completed == 0}">未完了</option>
+						<option value="1" th:selected="${completed != null and completed == 1}">完了</option>
+					</select>
+					<label class="sr-only" for="due">期限で絞り込み</label>
+					<select class="form-control" id="due" name="due">
+						<option value="" th:selected="${due == null or due == ''}">期限：すべて</option>
+						<option value="overdue" th:selected="${due == 'overdue'}">期限切れ</option>
+						<option value="today" th:selected="${due == 'today'}">今日が期限</option>
+						<option value="week" th:selected="${due == 'week'}">7日以内</option>
+					</select>
+					<label class="sr-only" for="sort">並び順</label>
+					<select class="form-control" id="sort" name="sort">
+						<option value="id" th:selected="${sort == null or sort == 'id'}">登録順</option>
+						<option value="due" th:selected="${sort == 'due'}">期限が近い順</option>
+					</select>
+					<button type="submit" class="btn btn-primary">検索</button>
+				</form>
+
+				<!-- タスク一覧 -->
+				<div class="table-wrap">
+					<table class="cy-table">
+						<thead>
+							<tr>
+								<th>TASK</th>
+								<th>STATUS</th>
+								<th>CREATED</th>
+								<th>DUE</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="task : ${tasks}" th:classappend="${task.overdue} ? 'row-over'">
+								<td>
+									<a class="t" th:href="@{/task/{id}(id=${task.id})}" th:text="${task.title}"></a>
+									<div class="sub" th:text="${task.description}"></div>
+								</td>
+								<td>
+									<span class="tag"
+										th:classappend="${task.isDone()} ? 'tag-done' : (${task.overdue} ? 'tag-over' : 'tag-todo')"
+										th:text="${task.overdue} ? '期限切れ' : ${task.completedLabel}"></span>
+								</td>
+								<td class="mono" th:text="${#temporals.format(task.createdDate, 'yyyy/MM/dd')}"></td>
+								<td class="mono"
+									th:classappend="${task.overdue} ? 'over' : (${task.dueDate == null} ? 'muted')"
+									th:text="${task.dueDate != null} ? ${#temporals.format(task.dueDate, 'yyyy/MM/dd')} : '-'">
+								</td>
+								<td class="text-nowrap">
+									<!-- 達成／未達成の切り替え -->
+									<form th:action="@{/task/{id}/toggle(id=${task.id})}" method="post"
+										class="d-inline">
+										<input type="hidden" name="_csrf" th:value="${csrfToken}">
+										<input type="hidden" name="keyword" th:value="${keyword}">
+										<input type="hidden" name="completed" th:value="${completed}">
+										<button type="submit" class="lk"
+											th:text="${task.isDone()} ? '未完了に戻す' : '完了にする'"></button>
+									</form>
+									<!-- 編集 -->
+									<a th:href="@{/task/{id}/edit(id=${task.id})}" class="lk">編集</a>
+									<!-- 削除 -->
+									<form th:action="@{/task/{id}/delete(id=${task.id})}" method="post" class="d-inline"
+										onsubmit="return confirm('このタスクを削除しますか？');">
+										<input type="hidden" name="_csrf" th:value="${csrfToken}">
+										<input type="hidden" name="keyword" th:value="${keyword}">
+										<input type="hidden" name="completed" th:value="${completed}">
+										<input type="hidden" name="due" th:value="${due}">
+										<input type="hidden" name="sort" th:value="${sort}">
+										<button type="submit" class="lk del">削除</button>
+									</form>
+								</td>
+							</tr>
+							<tr th:if="${tasks == null or tasks.isEmpty()}">
+								<td colspan="5" class="text-center muted">
+									該当するタスクがありません。
+									<a th:href="@{/task/add}">最初のタスクを追加する</a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</main>
+	</div>
+
+	<script th:src="@{/js/jquery-4.0.0.slim.min.js}"></script>
+	<script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+</body>
+
+</html>
